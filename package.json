@@ -1,0 +1,13 @@
+{
+  "name": "escape-from-lebethel",
+  "version": "0.1.0",
+  "description": "RPG · 非对称对抗 · Roguelike · HTML5 多端 Demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx http-server . -p 8080 -c-1 -o",
+    "serve": "python -m http.server 8080"
+  },
+  "keywords": ["game", "h5", "roguelike", "rpg", "asymmetric"],
+  "license": "MIT"
+}

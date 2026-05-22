@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.idea/
+.vscode/
+_extracted.txt
+_extract.py
+origindoc/
