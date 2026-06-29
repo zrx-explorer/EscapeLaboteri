@@ -2,6 +2,7 @@
 import { Scene } from '../core/SceneManager.js';
 import { Draw, pointInRect } from '../core/Renderer.js';
 import { HeroSelectScene } from './HeroSelect.js';
+import { MainMenuScene } from './MainMenu.js';
 
 const PARTY_PRESETS = [
   { id: 3, label: '三人副本',   desc: '玩家 + 2 AI · 纯 PvE',    spyMax: 0 },
@@ -69,10 +70,7 @@ export class LobbyScene extends Scene {
     // 返回
     const back = this._backBtn();
     if (pointInRect(m.x, m.y, back.x, back.y, back.w, back.h)) {
-      // 动态导入避免循环依赖
-      import('./MainMenu.js').then(mod => {
-        this.game.scenes.replace(new mod.MainMenuScene(this.game));
-      });
+      this.game.scenes.replace(new MainMenuScene(this.game));
       return;
     }
     // 开始

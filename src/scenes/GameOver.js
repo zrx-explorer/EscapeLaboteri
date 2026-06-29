@@ -32,6 +32,7 @@ export class GameOverScene extends Scene {
       // 重置 meta 的内奸标识
       this.game.meta._spyAssigned = false;
       this.game.meta._spyId = null;
+      this.game.meta._spyIds = null;
       this.game.scenes.replace(new MainMenuScene(this.game));
     }
   }

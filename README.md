@@ -27,7 +27,8 @@
 - 🩸 **双阵营**：玩家可选勇者或内奸，AI 同伴可智能反击
 - 🧩 **Roguelike**，元进展（圣杯系统）跨局解锁
 - 💰 **商店循环**：金币 / 水晶 / 经验书 三层经济
-- 🛒 **零依赖**：原生 ES Module + Canvas2D，零构建一键运行
+- 🗺 **丰富地形**：障碍、泥沼/深水、熔岩/毒雾、治疗点、目标点均由关卡配置驱动
+- 🛒 **零依赖**：原生 ES Module + Canvas2D；另提供可双击运行的单文件版
 - 📱 **多端**：浏览器 / GitHub Pages / 微信小游戏（迁移指南见 docs）
 
 ## 📁 工程结构
@@ -36,6 +37,11 @@
 game/
 ├── index.html                # 入口
 ├── package.json              # 本地预览脚本
+├── dist/
+│   └── escape-lebethel-local.html # 双击可玩的本地单文件版
+├── tools/
+│   ├── build_local_html.py   # 生成本地单文件版
+│   └── browser_smoke_test.html # 浏览器烟测页
 ├── README.md                 # 本文档
 ├── LICENSE
 ├── .gitignore
@@ -45,7 +51,8 @@ game/
 │   ├── 游戏说明.md
 │   ├── 策划案-修订版.md
 │   ├── 部署指南.md
-│   └── 微信小游戏迁移.md
+│   ├── 微信小游戏迁移.md
+│   └── 微信小游戏落地清单.md
 ├── assets/                   # 资源（图片/音频）
 │   ├── images/
 │   └── audio/
@@ -56,6 +63,7 @@ game/
     │   ├── SceneManager.js   # 场景栈
     │   ├── Renderer.js       # Canvas 渲染封装
     │   ├── Input.js          # 键鼠输入
+    │   ├── MapRuntime.js     # 地形绘制、碰撞、区域效果
     │   └── EventBus.js       # 事件总线
     ├── data/                 # 数值配表（可热更）
     │   ├── heroes.js
@@ -89,6 +97,12 @@ game/
 
 任意一种方式：
 
+```text
+方式 0：直接双击 dist/escape-lebethel-local.html
+```
+
+这是已打包的单文件版，不依赖本地服务器，适合发给别人快速试玩。
+
 ```bash
 # 方式 1：使用 npx（推荐，零安装）
 cd game
@@ -103,7 +117,13 @@ python -m http.server 8080
 
 然后浏览器访问 <http://localhost:8080>。
 
-> ⚠️ 由于使用 ES Module，必须通过 HTTP 协议访问，**不能直接双击 `index.html`**（会因 CORS 加载失败）。
+> ⚠️ 源码版 `index.html` 使用 ES Module，必须通过 HTTP 协议访问，**不能直接双击 `index.html`**（会因 CORS 加载失败）。需要双击试玩时使用 `dist/escape-lebethel-local.html`。
+
+重新生成单文件版：
+
+```bash
+python tools/build_local_html.py
+```
 
 ## 🎯 操作
 
@@ -118,7 +138,18 @@ python -m http.server 8080
 | 切换队友伤害 | F |
 | 跳过剧情 / 推进结算 | 空格 / 左键 |
 
-单机玩法详见 [`docs/游戏说明.md`](docs/游戏说明.md) § 16 单机模式。
+单机玩法详见 [`docs/游戏说明.md`](docs/游戏说明.md) § 16 单机模式。微信小游戏落地流程见 [`docs/微信小游戏落地清单.md`](docs/微信小游戏落地清单.md)。
+
+## ✅ 本地测试
+
+```bash
+python -m http.server 8765 --bind 127.0.0.1
+```
+
+浏览器访问：
+
+- 源码版：<http://127.0.0.1:8765/>
+- 自动烟测：<http://127.0.0.1:8765/tools/browser_smoke_test.html>
 
 ## 🛠 技术栈
 

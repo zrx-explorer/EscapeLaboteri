@@ -8,6 +8,7 @@ import { HERO_LIST } from '../data/heroes.js';
 import { AISystem } from '../systems/AISystem.js';
 import { SpawnSystem } from '../systems/SpawnSystem.js';
 import { Draw } from '../core/Renderer.js';
+import { MapRuntime } from '../core/MapRuntime.js';
 import { dist, angle, clamp, shuffle } from '../utils/Math2D.js';
 import { HUD } from '../ui/HUD.js';
 import { ShopScene } from './Shop.js';
@@ -22,6 +23,7 @@ export class BattleScene extends Scene {
     // 世界中心
     this.cx = game.width / 2;
     this.cy = game.height / 2;
+    this.map = new MapRuntime(this, this.cfg.map || {});
 
     this.heroes = [];
     this.enemies = [];
@@ -95,6 +97,16 @@ export class BattleScene extends Scene {
 
   // ============ 战斗系统 API ============
   addEnemy(e) { e.world = this; this.enemies.push(e); }
+
+  moveEntity(entity, nx, ny) {
+    const p = this.map.moveEntity(entity, nx, ny);
+    entity.x = p.x;
+    entity.y = p.y;
+  }
+
+  findSpawnPoint(cx, cy, minR, maxR) {
+    return this.map.findSpawnPoint(cx, cy, minR, maxR);
+  }
 
   spawnProjectile(owner, ang, range, dmg, type, opt) {
     this.projectiles.push(new Projectile(owner, ang, range, dmg, type, opt));
@@ -196,11 +208,9 @@ export class BattleScene extends Scene {
     for (const t of this.damageTexts) { t.life -= dt; t.y += t.vy * dt; }
     this.damageTexts = this.damageTexts.filter(t => t.life > 0);
 
-    // 边界限制
-    for (const h of this.heroes) {
-      h.x = clamp(h.x, 20, this.game.width - 20);
-      h.y = clamp(h.y, 20, this.game.height - 20);
-    }
+    // 地形效果：慢速、伤害、治疗与边界限制
+    for (const h of this.heroes) this.map.updateEntity(h, dt);
+    for (const e of this.enemies) this.map.updateEntity(e, dt);
 
     // 终局判断
     const aliveAll  = this.heroes.filter(h => !h.dead);
@@ -241,8 +251,11 @@ export class BattleScene extends Scene {
     if (inp.isDown('d')) dx += 1;
     if (dx || dy) {
       const len = Math.hypot(dx, dy);
-      p.x += (dx / len) * p.currentMoveSpd * dt;
-      p.y += (dy / len) * p.currentMoveSpd * dt;
+      this.moveEntity(
+        p,
+        p.x + (dx / len) * p.currentMoveSpd * dt,
+        p.y + (dy / len) * p.currentMoveSpd * dt
+      );
       p.facing = Math.atan2(dy, dx);
     }
 
@@ -279,19 +292,7 @@ export class BattleScene extends Scene {
   }
 
   render(ctx) {
-    // 背景
-    ctx.fillStyle = this.cfg.envColor;
-    ctx.fillRect(0, 0, this.game.width, this.game.height);
-
-    // 网格
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < this.game.width; x += 32) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, this.game.height); ctx.stroke();
-    }
-    for (let y = 0; y < this.game.height; y += 32) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.game.width, y); ctx.stroke();
-    }
+    this.map.renderUnder(ctx);
 
     // 毒圈
     if (this.spawn.poisonStarted) {
@@ -311,6 +312,7 @@ export class BattleScene extends Scene {
     for (const e of this.enemies) e.render(ctx);
     for (const h of this.heroes) h.render(ctx);
     for (const p of this.projectiles) p.render(ctx);
+    this.map.renderOver(ctx);
 
     // 伤害文本
     for (const t of this.damageTexts) {

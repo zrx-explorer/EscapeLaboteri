@@ -56,10 +56,18 @@ export class SpawnSystem {
     for (const [type, count] of wave.spawn) {
       const realCount = Math.max(1, Math.round(count * this.spawnCountMul));
       for (let i = 0; i < realCount; i++) {
-        const ang = rand(0, Math.PI * 2);
-        const r = rand(220, 340);
-        const x = this.world.cx + Math.cos(ang) * r;
-        const y = this.world.cy + Math.sin(ang) * r;
+        const pos = this.world.findSpawnPoint
+          ? this.world.findSpawnPoint(this.world.cx, this.world.cy, 220, 340)
+          : (() => {
+              const ang = rand(0, Math.PI * 2);
+              const r = rand(220, 340);
+              return {
+                x: this.world.cx + Math.cos(ang) * r,
+                y: this.world.cy + Math.sin(ang) * r,
+              };
+            })();
+        const x = pos.x;
+        const y = pos.y;
         const e = new Enemy(type, x, y);
         this._applyDiff(e, false);
         this.world.addEnemy(e);

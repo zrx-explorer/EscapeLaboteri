@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Escape Lebethel Browser Smoke Test</title>
+  <style>
+    body { margin: 0; background: #111; color: #ddd; font: 13px monospace; }
+    #stage { display: block; }
+    #result { position: fixed; left: 8px; top: 8px; background: rgba(0,0,0,.72); padding: 8px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <canvas id="stage" width="1024" height="640"></canvas>
+  <pre id="result">running</pre>
+  <script type="module">
+    import { Game } from '../src/core/Game.js';
+    import { BattleScene } from '../src/scenes/Battle.js';
+
+    const result = document.getElementById('result');
+    const errors = [];
+    window.addEventListener('error', e => errors.push(e.message));
+    window.addEventListener('unhandledrejection', e => errors.push(String(e.reason)));
+
+    const canvas = document.getElementById('stage');
+    const game = new Game(canvas, canvas.getContext('2d'));
+    game.meta.heroId = 'hunter';
+    game.meta.partySize = 5;
+    game.meta.spyCount = 1;
+    game.meta.playerRole = 'hero';
+    game.meta.difficulty = 'normal';
+    game.meta.diffMul = { enemy: 1, poison: 1, expGain: 1, gold: 1 };
+    game.scenes.push(new BattleScene(game, 0));
+    game.start();
+    window.__game = game;
+
+    let elapsed = 0;
+    let skillPulse = 0;
+    let waypointIndex = 0;
+    const waypoints = [
+      { x: 620, y: 330 },
+      { x: 620, y: 185 },
+      { x: 770, y: 185 },
+      { x: 770, y: 120 },
+    ];
+    const driver = setInterval(() => {
+      elapsed += 0.1;
+      const scene = game.scenes.current;
+      if (!scene || !scene.player) return;
+      scene.storyTimer = 0;
+      const p = scene.player;
+      const liveEnemies = scene.enemies.filter(e => !e.dead);
+      const waypoint = waypoints[Math.min(waypointIndex, waypoints.length - 1)];
+      if (Math.hypot(p.x - waypoint.x, p.y - waypoint.y) < 28 && waypointIndex < waypoints.length - 1) {
+        waypointIndex++;
+      }
+      const target = liveEnemies[0] || waypoint;
+      const moveTarget = waypointIndex < waypoints.length ? waypoint : target;
+
+      game.input.mouse.x = target.x;
+      game.input.mouse.y = target.y;
+      const dx = moveTarget.x - p.x;
+      const dy = moveTarget.y - p.y;
+      const len = Math.hypot(dx, dy);
+      if (len > 18) {
+        scene.moveEntity(
+          p,
+          p.x + (dx / len) * p.currentMoveSpd * 0.1,
+          p.y + (dy / len) * p.currentMoveSpd * 0.1
+        );
+      }
+      p.basicAttack(scene, target.x, target.y);
+
+      skillPulse += 0.1;
+      if (skillPulse > 1.4) {
+        p.castSkill(0, scene, target.x, target.y);
+        skillPulse = 0;
+      }
+
+      const state = {
+        elapsed: elapsed.toFixed(1),
+        scene: scene.constructor.name,
+        level: scene.cfg?.name,
+        player: { hp: Math.round(p.hp), x: Math.round(p.x), y: Math.round(p.y), gold: p.gold, level: p.level },
+        waypointIndex,
+        enemiesAlive: liveEnemies.length,
+        totalEnemies: scene.enemies.length,
+        terrain: {
+          blockers: scene.map?.blockers.length || 0,
+          hazards: scene.map?.hazards.length || 0,
+          slowZones: scene.map?.slowZones.length || 0,
+          healZones: scene.map?.healZones.length || 0,
+        },
+        ended: !!scene.ended,
+        errors,
+      };
+      result.textContent = JSON.stringify(state, null, 2);
+      document.body.dataset.testResult = errors.length ? 'error' : 'running';
+      if (elapsed >= 12) {
+        document.body.dataset.testResult = errors.length ? 'error' : 'ok';
+        game.input.mouse.down = false;
+        clearInterval(driver);
+      }
+    }, 100);
+  </script>
+</body>
+</html>

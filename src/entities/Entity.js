@@ -36,7 +36,7 @@ export class Entity {
   }
 
   get atkValue() { return this.atk + this.atkBonus; }
-  get currentMoveSpd() { return this.moveSpd * this.moveSpdMul; }
+  get currentMoveSpd() { return this.moveSpd * this.moveSpdMul * (this.terrainMoveMul || 1); }
   get currentAtkSpd() { return this.atkSpd * this.atkSpdMul; }
 
   addBuff(b) {
@@ -100,8 +100,10 @@ export class Entity {
   moveTowards(tx, ty, dt) {
     const a = angle(this.x, this.y, tx, ty);
     this.facing = a;
-    this.x += Math.cos(a) * this.currentMoveSpd * dt;
-    this.y += Math.sin(a) * this.currentMoveSpd * dt;
+    const nx = this.x + Math.cos(a) * this.currentMoveSpd * dt;
+    const ny = this.y + Math.sin(a) * this.currentMoveSpd * dt;
+    if (this.world && this.world.moveEntity) this.world.moveEntity(this, nx, ny);
+    else { this.x = nx; this.y = ny; }
   }
 
   render(ctx) {

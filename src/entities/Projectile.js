@@ -22,6 +22,10 @@ export class Projectile {
     this.x += Math.cos(this.angle) * this.spd * dt;
     this.y += Math.sin(this.angle) * this.spd * dt;
     this.life -= dt;
+    if (world.map && world.map.isBlocked(this.x, this.y, this.r)) {
+      this.dead = true;
+      return;
+    }
     if (this.life <= 0) { this.dead = true; return; }
     // 命中检测：对目标团队相反阵营
     const targets = this.owner.team === 'hero' ? world.enemies : world.heroes;

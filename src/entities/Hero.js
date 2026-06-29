@@ -83,7 +83,8 @@ export class Hero extends Entity {
   dashTo(world) {
     const dx = Math.cos(this.facing) * 90;
     const dy = Math.sin(this.facing) * 90;
-    this.x += dx; this.y += dy;
+    if (world && world.moveEntity) world.moveEntity(this, this.x + dx, this.y + dy);
+    else { this.x += dx; this.y += dy; }
     world.applyMeleeAttack(this, this.facing, 50, this.atkValue * 1.1, 'physical');
   }
 
